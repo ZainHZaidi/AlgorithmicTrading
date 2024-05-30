@@ -34,32 +34,52 @@ def CreateYear(year, county, state, writer, nass, lat, long):
     q1params = {
         "latitude": lat,
         "longitude": long,
-        "start_date": f"{year}-03-08",
-        "end_date": f"{year}-05-22",
+        "start_date": f"{year}-01-01",
+        "end_date": f"{year}-03-31",
         "daily": ["temperature_2m_mean", "precipitation_sum", "sunshine_duration"],
     }
     q2params = {
         "latitude": lat,
         "longitude": long,
-        "start_date": f"{year}-03-08",
-        "end_date": f"{year}-05-22",
+        "start_date": f"{year}-04-01",
+        "end_date": f"{year}-06-30",
         "daily": ["temperature_2m_mean", "precipitation_sum", "sunshine_duration"],
     }
     q3params = {
         "latitude": lat,
         "longitude": long,
-        "start_date": f"{year}-03-08",
-        "end_date": f"{year}-05-22",
+        "start_date": f"{year}-07-01",
+        "end_date": f"{year}-09-30",
         "daily": ["temperature_2m_mean", "precipitation_sum", "sunshine_duration"],
     }
     q4params = {
         "latitude": lat,
         "longitude": long,
-        "start_date": f"{year}-03-08",
-        "end_date": f"{year}-05-22",
+        "start_date": f"{year}-10-01",
+        "end_date": f"{year}-12-31",
         "daily": ["temperature_2m_mean", "precipitation_sum", "sunshine_duration"],
     }
     val = nass.get_data(call)
-    q1 = openmeteo.weather_api(url, params=q1params)[0].Daily()
-
-
+    row = []
+    row.append(year)
+    row.append(val)
+    params = [q1params, q2params, q3params, q4params]
+    for param in params:
+        daily = openmeteo.weather_api(url, params=param)[0].Daily()
+        daily_data = {"date": pd.date_range(
+            start=pd.to_datetime(daily.Time(), unit="s", utc=True),
+            end=pd.to_datetime(daily.TimeEnd(), unit="s", utc=True),
+            freq=pd.Timedelta(seconds=daily.Interval()),
+            inclusive="left"
+        )}
+        temperature_mean = daily.Variables(0).ValuesAsNumpy()
+        rain_sum = daily.Variables(1).ValuesAsNumpy()
+        sunshine_duration = daily.Variables(2).ValuesAsNumpy()
+        daily_data["temperature_mean"] = temperature_mean
+        daily_data["rain_sum"] = rain_sum
+        daily_data["sunshine_duration"] = sunshine_duration
+        k = pd.DataFrame(data=daily_data)
+        dvs = process(k, ["temperature_mean", "rain_sum", "sunshine_duration"])
+        for x in dvs:
+            row.append(x)
+    return row

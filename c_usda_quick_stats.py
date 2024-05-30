@@ -1,20 +1,3 @@
-#   Name:           c_usda_quick_stats.py
-#   Author:         Randy Runtsch
-#   Date:           March 29, 2022
-#   Project:        Query USDA QuickStats API
-#   Author:         Randall P. Runtsch
-#
-#   Description:    Query the USDA QuickStats api_GET API with a specified set of
-#                   parameters. Write the retrieved data, in CSV format, to a file.
-#
-#   See Quick Stats (NASS) API user guide:  https://quickstats.nass.usda.gov/api
-#   Request a QuickStats API key here:      https://quickstats.nass.usda.gov/api#param_define
-#
-#   Attribution: This product uses the NASS API but is not endorsed or certified by NASS.
-#
-#   Changes
-#
-
 import urllib.request
 
 class c_usda_quick_stats:
