@@ -13,9 +13,10 @@ url = "https://archive-api.open-meteo.com/v1/archive"
 params = {
 	"latitude": 38.5816,
 	"longitude": -121.4944,
-	"start_date": "1999-05-08",
+	"start_date": "1999-03-08",
 	"end_date": "1999-05-22",
-	"daily": ["temperature_2m_mean", "precipitation_sum"],
+	"timezone": "America/New_York",
+	"daily": ["temperature_2m_mean", "precipitation_sum", "sunshine_duration"],
 }
 responses = openmeteo.weather_api(url, params=params)
 
@@ -25,8 +26,9 @@ response = responses[0]
 
 # Process hourly data. The order of variables needs to be the same as requested.
 daily = response.Daily()
-daily_temperature_2m = daily.Variables(0).ValuesAsNumpy()
+temperature_mean = daily.Variables(0).ValuesAsNumpy()
 rain_sum = daily.Variables(1).ValuesAsNumpy()
+sunshine_duration = daily.Variables(2).ValuesAsNumpy()
 
 daily_data = {"date": pd.date_range(
 	start = pd.to_datetime(daily.Time(), unit = "s", utc = True),
@@ -34,9 +36,18 @@ daily_data = {"date": pd.date_range(
 	freq = pd.Timedelta(seconds = daily.Interval()),
 	inclusive = "left"
 )}
-print(daily_data)
-daily_data["temperature_2m"] = daily_temperature_2m
+
+daily_data["temperature_mean"] = temperature_mean
 daily_data["rain_sum"] = rain_sum
-print(daily.Variables(0).ValuesAsNumpy())
+daily_data["sunshine_duration"] = sunshine_duration
+
 hourly_dataframe = pd.DataFrame(data = daily_data)
-print(hourly_dataframe)
+vars = ["temperature_mean", "rain_sum", "sunshine_duration"]
+def process(data, variables):
+    returnVal = []
+    for i in range(3):
+        returnVal.append([data.mean()[variables[i]], data.std()[variables[i]], data.min()[variables[i]], data.max()[variables[i]]])
+    return returnVal
+
+
+print(process(hourly_dataframe, vars))
