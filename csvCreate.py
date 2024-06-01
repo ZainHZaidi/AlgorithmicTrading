@@ -107,5 +107,6 @@ def csv_create(county, state, lat, long, y1, y2):
 
 df = pd.read_csv("State-County-Lat-Long.csv")
 for i in range(len(df)):
-    if(df.loc[i]['state'] == "IN"):
+    if(df.loc[i]['state'] == "IN" and df.loc[i]['county'] == "Union"):
+        print(df.loc[i]['state'] + "_" + df.loc[i]["county"])
         csv_create(df.loc[i]["county"], df.loc[i]["state"], df.loc[i]["lat"], df.loc[i]["lon"], 1960, 2022)
