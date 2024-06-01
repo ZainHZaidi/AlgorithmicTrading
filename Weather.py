@@ -11,10 +11,10 @@ openmeteo = openmeteo_requests.Client(session = retry_session)
 url = "https://archive-api.open-meteo.com/v1/archive"
 # call parameters, latitude, longitude, fully inclusive date, then daily, set of daily variables to call from api
 params = {
-	"latitude": 38.5816,
-	"longitude": -121.4944,
-	"start_date": "1999-03-08",
-	"end_date": "1999-05-22",
+	"latitude":  39.2059,
+	"longitude": -85.8977,
+	"start_date": "2000-01-01",
+	"end_date": "2000-03-31",
 	"timezone": "America/New_York",
 	"daily": ["temperature_2m_mean", "precipitation_sum", "sunshine_duration"],
 }
@@ -43,11 +43,3 @@ daily_data["sunshine_duration"] = sunshine_duration
 
 hourly_dataframe = pd.DataFrame(data = daily_data)
 vars = ["temperature_mean", "rain_sum", "sunshine_duration"]
-def process(data, variables):
-    returnVal = []
-    for i in range(3):
-        returnVal.append([data.mean()[variables[i]], data.std()[variables[i]], data.min()[variables[i]], data.max()[variables[i]]])
-    return returnVal
-
-
-print(process(hourly_dataframe, vars))

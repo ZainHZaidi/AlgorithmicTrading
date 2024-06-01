@@ -14,4 +14,4 @@ class c_usda_quick_stats:
         full_url = self.base_url_api_get + parameters
         s_result = urllib.request.urlopen(full_url)
         s_text = s_result.read().decode('utf-8')
-        return eval(s_text.split(",")[-2])
+        return eval(eval(s_text.split(",")[-2]))

@@ -1,36 +1,39 @@
-
 import csv
 import openmeteo_requests
 import requests_cache
 import pandas as pd
 import urllib.parse
 from retry_requests import retry
+from c_usda_quick_stats import c_usda_quick_stats
 
-# takes a coordinate(lat, long) and a date range(inclusive, inclusive) and creates a CSV with all relevant information(yield, quarterly avg stddev min max for temp, rain sum, sunshine duration
-#def csvCreate(coordinate, dateRange):
+# takes a quarters worth of weather data in the form of a pandas dataframe
+# and produces an array of data in the form
+# ((avg, stddev, min, max (temp)), (avg, stddev, min, max (rain sum)), (avg, stddev, min, max (sunshine duration))
 
-#takes a quarters worth of weather data in the form of a pandas dataframe and produces an array of avg stddev min max for the sets of data in the form
-# ((avg stddev min max of temp), (avg stddev min max of rain sum), (avg stddev min max of sunshine duration))
-url = "https://archive-api.open-meteo.com/v1/archive"
-cache_session = requests_cache.CachedSession('.cache', expire_after = -1)
-retry_session = retry(cache_session, retries = 5, backoff_factor = 0.2)
-openmeteo = openmeteo_requests.Client(session = retry_session)
+
 def process(data, variables):
     returnVal = []
     for i in range(3):
-        returnVal.append([data.mean()[variables[i]], data.std()[variables[i]], data.min()[variables[i]], data.max()[variables[i]]])
+        returnVal.append([data.get(variables[i]).mean(), data.get(variables[i]).std(),
+                          data.get(variables[i]).min(), data.get(variables[i]).max()])
     return returnVal
 
-def CreateYear(year, county, state, writer, nass, lat, long):
+
+def create_year(year, county, state, nass, long, lat):
+    cache_session = requests_cache.CachedSession('.cache', expire_after=-1)
+    retry_session = retry(cache_session, retries=5, backoff_factor=0.2)
+    openmeteo = openmeteo_requests.Client(session=retry_session)
+    url = "https://archive-api.open-meteo.com/v1/archive"
+    # all the calls for the apis: call is for NASS, q1-4params is for openmeteo
     call = 'source_desc=SURVEY' + \
-    '&sector_desc=CROPS' + \
-    '&commodity_desc=SOYBEANS' + \
-    '&statisticcat_desc=YIELD' + \
-    '&unit_desc=' + urllib.parse.quote('BU / ACRE') + \
-    f'&state_alpha={state}' + \
-    f'&county_name={county}' + \
-    f'&year={year}' + \
-    '&format=CSV'
+        '&sector_desc=CROPS' + \
+        '&commodity_desc=SOYBEANS' + \
+        '&statisticcat_desc=YIELD' + \
+        '&unit_desc=' + urllib.parse.quote('BU / ACRE') + \
+        f'&state_alpha={state}' + \
+        f'&county_name={county}' + \
+        f'&year={year}' + \
+        '&format=CSV'
     q1params = {
         "latitude": lat,
         "longitude": long,
@@ -59,10 +62,8 @@ def CreateYear(year, county, state, writer, nass, lat, long):
         "end_date": f"{year}-12-31",
         "daily": ["temperature_2m_mean", "precipitation_sum", "sunshine_duration"],
     }
-    val = nass.get_data(call)
-    row = []
-    row.append(year)
-    row.append(val)
+    val = nass.get_data(call) # yield value in BU/ACRE
+    row = [year, val]  # eventual return row
     params = [q1params, q2params, q3params, q4params]
     for param in params:
         daily = openmeteo.weather_api(url, params=param)[0].Daily()
@@ -81,5 +82,30 @@ def CreateYear(year, county, state, writer, nass, lat, long):
         k = pd.DataFrame(data=daily_data)
         dvs = process(k, ["temperature_mean", "rain_sum", "sunshine_duration"])
         for x in dvs:
-            row.append(x)
+            for z in x:
+                row.append(z)
     return row
+
+
+def csv_create(county, state, lat, long, y1, y2):
+    cat1 = ["q1","q2","q3","q4"]
+    cat2 = ["temperature", "rainSum", "SSdur"]
+    cat3 = ["mean","std","min","max"]
+    emp = ["year", "yield"]
+    for x in cat1:
+        for j in cat2:
+            for z in cat3:
+                emp.append(x+"_"+j+"_"+z)
+    with open(f'{state}_{county}.csv', 'w', newline='\n') as csvfile:
+        writer = csv.writer(csvfile, quotechar = ",")
+        writer.writerow(emp)
+        for i in range(y1, y2 + 1):
+            writer.writerow(create_year(i, county, state, c_usda_quick_stats(), long, lat))
+
+
+
+
+df = pd.read_csv("State-County-Lat-Long.csv")
+for i in range(len(df)):
+    if(df.loc[i]['state'] == "IN"):
+        csv_create(df.loc[i]["county"], df.loc[i]["state"], df.loc[i]["lat"], df.loc[i]["lon"], 1960, 2022)
