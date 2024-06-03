@@ -3,6 +3,7 @@ import openmeteo_requests
 import requests_cache
 import pandas as pd
 import urllib.parse
+import time
 from retry_requests import retry
 from c_usda_quick_stats import c_usda_quick_stats
 
@@ -63,50 +64,52 @@ def create_year(year, county, state, nass, long, lat):
         "daily": ["temperature_2m_mean", "precipitation_sum", "sunshine_duration"],
     }
     val = nass.get_data(call) # yield value in BU/ACRE
-    row = [year, val]  # eventual return row
-    params = [q1params, q2params, q3params, q4params]
-    for param in params:
-        daily = openmeteo.weather_api(url, params=param)[0].Daily()
-        daily_data = {"date": pd.date_range(
-            start=pd.to_datetime(daily.Time(), unit="s", utc=True),
-            end=pd.to_datetime(daily.TimeEnd(), unit="s", utc=True),
-            freq=pd.Timedelta(seconds=daily.Interval()),
-            inclusive="left"
-        )}
-        temperature_mean = daily.Variables(0).ValuesAsNumpy()
-        rain_sum = daily.Variables(1).ValuesAsNumpy()
-        sunshine_duration = daily.Variables(2).ValuesAsNumpy()
-        daily_data["temperature_mean"] = temperature_mean
-        daily_data["rain_sum"] = rain_sum
-        daily_data["sunshine_duration"] = sunshine_duration
-        k = pd.DataFrame(data=daily_data)
-        dvs = process(k, ["temperature_mean", "rain_sum", "sunshine_duration"])
-        for x in dvs:
-            for z in x:
-                row.append(z)
+    if val != False:
+        row = [year, val]  # eventual return row
+        params = [q1params, q2params, q3params, q4params]
+        for param in params:
+            daily = openmeteo.weather_api(url, params=param)[0].Daily()
+            daily_data = {"date": pd.date_range(
+                start=pd.to_datetime(daily.Time(), unit="s", utc=True),
+                end=pd.to_datetime(daily.TimeEnd(), unit="s", utc=True),
+                freq=pd.Timedelta(seconds=daily.Interval()),
+                inclusive="left"
+            )}
+            temperature_mean = daily.Variables(0).ValuesAsNumpy()
+            rain_sum = daily.Variables(1).ValuesAsNumpy()
+            sunshine_duration = daily.Variables(2).ValuesAsNumpy()
+            daily_data["temperature_mean"] = temperature_mean
+            daily_data["rain_sum"] = rain_sum
+            daily_data["sunshine_duration"] = sunshine_duration
+            k = pd.DataFrame(data=daily_data)
+            dvs = process(k, ["temperature_mean", "rain_sum", "sunshine_duration"])
+            for x in dvs:
+                for z in x:
+                    row.append(z)
     return row
 
+cat1 = ["q1","q2","q3","q4"]
+cat2 = ["temperature", "rainSum", "SSdur"]
+cat3 = ["mean","std","min","max"]
+emp = ["year", "yield"]
+for x in cat1:
+    for j in cat2:
+        for z in cat3:
+            emp.append(x + "_" + j + "_" + z)
 
-def csv_create(county, state, lat, long, y1, y2):
-    cat1 = ["q1","q2","q3","q4"]
-    cat2 = ["temperature", "rainSum", "SSdur"]
-    cat3 = ["mean","std","min","max"]
-    emp = ["year", "yield"]
-    for x in cat1:
-        for j in cat2:
-            for z in cat3:
-                emp.append(x+"_"+j+"_"+z)
+def csv_create(county, state, lat, long, y1, y2, emp):
     with open(f'{state}_{county}.csv', 'w', newline='\n') as csvfile:
         writer = csv.writer(csvfile, quotechar = ",")
         writer.writerow(emp)
         for i in range(y1, y2 + 1):
             writer.writerow(create_year(i, county, state, c_usda_quick_stats(), long, lat))
+            print(state + "_" + county, (i-y1)/(y2-y1+1))
 
 
 
 
-df = pd.read_csv("State-County-Lat-Long.csv")
-for i in range(len(df)):
-    if(df.loc[i]['state'] == "IN" and df.loc[i]['county'] == "Union"):
-        print(df.loc[i]['state'] + "_" + df.loc[i]["county"])
-        csv_create(df.loc[i]["county"], df.loc[i]["state"], df.loc[i]["lat"], df.loc[i]["lon"], 1960, 2022)
+df = pd.read_csv("states.csv")
+for i in range(14, len(df)):
+    initial = time.time()
+    csv_create(df.loc[i]["county"], df.loc[i]["state"], df.loc[i]["lat"], df.loc[i]["long"], 1970, 2022, emp)
+    print(time.time()-initial)

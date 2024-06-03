@@ -15,7 +15,6 @@ class c_usda_quick_stats:
         try:
             s_result = urllib.request.urlopen(full_url)
         except:
-            print(parameters)
-            return
+            return False
         s_text = s_result.read().decode('utf-8')
         return eval(eval(s_text.split(",")[-2]))
