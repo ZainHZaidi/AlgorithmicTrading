@@ -64,29 +64,29 @@ def create_year(year, county, state, nass, long, lat):
         "daily": ["temperature_2m_mean", "precipitation_sum", "sunshine_duration"],
     }
     val = nass.get_data(call) # yield value in BU/ACRE
+    if val == None:
+        return [-1]
     row = [year, val]
-    if val != False:
-    # eventual return row
-        params = [q1params, q2params, q3params, q4params]
-        for param in params:
-            daily = openmeteo.weather_api(url, params=param)[0].Daily()
-            daily_data = {"date": pd.date_range(
-                start=pd.to_datetime(daily.Time(), unit="s", utc=True),
-                end=pd.to_datetime(daily.TimeEnd(), unit="s", utc=True),
-                freq=pd.Timedelta(seconds=daily.Interval()),
-                inclusive="left"
-            )}
-            temperature_mean = daily.Variables(0).ValuesAsNumpy()
-            rain_sum = daily.Variables(1).ValuesAsNumpy()
-            sunshine_duration = daily.Variables(2).ValuesAsNumpy()
-            daily_data["temperature_mean"] = temperature_mean
-            daily_data["rain_sum"] = rain_sum
-            daily_data["sunshine_duration"] = sunshine_duration
-            k = pd.DataFrame(data=daily_data)
-            dvs = process(k, ["temperature_mean", "rain_sum", "sunshine_duration"])
-            for x in dvs:
-                for z in x:
-                    row.append(z)
+    params = [q1params, q2params, q3params, q4params]
+    for param in params:
+        daily = openmeteo.weather_api(url, params=param)[0].Daily()
+        daily_data = {"date": pd.date_range(
+            start=pd.to_datetime(daily.Time(), unit="s", utc=True),
+            end=pd.to_datetime(daily.TimeEnd(), unit="s", utc=True),
+            freq=pd.Timedelta(seconds=daily.Interval()),
+            inclusive="left"
+        )}
+        temperature_mean = daily.Variables(0).ValuesAsNumpy()
+        rain_sum = daily.Variables(1).ValuesAsNumpy()
+        sunshine_duration = daily.Variables(2).ValuesAsNumpy()
+        daily_data["temperature_mean"] = temperature_mean
+        daily_data["rain_sum"] = rain_sum
+        daily_data["sunshine_duration"] = sunshine_duration
+        k = pd.DataFrame(data=daily_data)
+        dvs = process(k, ["temperature_mean", "rain_sum", "sunshine_duration"])
+        for x in dvs:
+            for z in x:
+                row.append(z)
     return row
 
 cat1 = ["q1","q2","q3","q4"]
