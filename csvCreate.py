@@ -64,8 +64,9 @@ def create_year(year, county, state, nass, long, lat):
         "daily": ["temperature_2m_mean", "precipitation_sum", "sunshine_duration"],
     }
     val = nass.get_data(call) # yield value in BU/ACRE
+    row = [year, val]
     if val != False:
-        row = [year, val]  # eventual return row
+    # eventual return row
         params = [q1params, q2params, q3params, q4params]
         for param in params:
             daily = openmeteo.weather_api(url, params=param)[0].Daily()
@@ -109,7 +110,7 @@ def csv_create(county, state, lat, long, y1, y2, emp):
 
 
 df = pd.read_csv("states.csv")
-for i in range(14, len(df)):
+for i in range(12, len(df)):
     initial = time.time()
     csv_create(df.loc[i]["county"], df.loc[i]["state"], df.loc[i]["lat"], df.loc[i]["long"], 1970, 2022, emp)
     print(time.time()-initial)
