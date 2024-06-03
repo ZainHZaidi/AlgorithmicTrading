@@ -107,6 +107,7 @@ def csv_create(county, state, lat, long, y1, y2, emp):
 
 
 
+
 df = pd.read_csv("states.csv")
 for i in range(22, len(df)):
     initial = time.time()

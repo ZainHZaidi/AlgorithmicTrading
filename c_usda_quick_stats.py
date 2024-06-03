@@ -17,4 +17,4 @@ class c_usda_quick_stats:
         except:
             return None
         s_text = s_result.read().decode('utf-8')
-        return eval(eval(s_text.split(",")[-2]))
+        return s_text.split("\n")
