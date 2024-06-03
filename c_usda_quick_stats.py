@@ -12,6 +12,7 @@ class c_usda_quick_stats:
 
     def get_data(self, parameters):
         full_url = self.base_url_api_get + parameters
+        print(full_url)
         try:
             s_result = urllib.request.urlopen(full_url)
         except:

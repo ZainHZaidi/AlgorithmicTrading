@@ -7,7 +7,8 @@ nass = c_usda_quick_stats()
 for file in os.listdir("states"):
     yields = dict()
     state = file.split("_")[0]
-    county = file.split("_")[-1].split(".")[0]
+    county = file.split("_")[-1].split(".csv")[0]
+    county = county.replace(" ", "%20")
     call = 'source_desc=SURVEY' + \
            '&sector_desc=CROPS' + \
            '&commodity_desc=SOYBEANS' + \

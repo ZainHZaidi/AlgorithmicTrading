@@ -6,6 +6,7 @@ from sklearn.metrics import accuracy_score, confusion_matrix, classification_rep
 from sklearn.datasets import load_iris
 
 # Load dataset
+print(load_iris())
 data = load_iris()
 X = data.data
 y = data.target
