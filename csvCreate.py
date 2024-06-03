@@ -64,8 +64,6 @@ def create_year(year, county, state, nass, long, lat):
         "daily": ["temperature_2m_mean", "precipitation_sum", "sunshine_duration"],
     }
     val = nass.get_data(call) # yield value in BU/ACRE
-    if val == None:
-        return [-1]
     row = [year, val]
     params = [q1params, q2params, q3params, q4params]
     for param in params:
