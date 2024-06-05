@@ -24,7 +24,7 @@ def create_year(year, county, state, nass, long, lat):
     cache_session = requests_cache.CachedSession('.cache', expire_after=-1)
     retry_session = retry(cache_session, retries=5, backoff_factor=0.2)
     openmeteo = openmeteo_requests.Client(session=retry_session)
-    url = "https://archive-api.open-meteo.com/v1/archive"
+    url = "https://customer-archive-api.open-meteo.com/v1/archive"
     # all the calls for the apis: call is for NASS, q1-4params is for openmeteo
     call = 'source_desc=SURVEY' + \
         '&sector_desc=CROPS' + \
@@ -35,19 +35,14 @@ def create_year(year, county, state, nass, long, lat):
         f'&county_name={county}' + \
         f'&year={year}' + \
         '&format=CSV'
-    q1params = {
-        "latitude": lat,
-        "longitude": long,
-        "start_date": f"{year}-01-01",
-        "end_date": f"{year}-03-31",
-        "daily": ["temperature_2m_mean", "precipitation_sum", "sunshine_duration"],
-    }
+
     q2params = {
         "latitude": lat,
         "longitude": long,
         "start_date": f"{year}-04-01",
         "end_date": f"{year}-06-30",
         "daily": ["temperature_2m_mean", "precipitation_sum", "sunshine_duration"],
+        "apikey": "KNxY5bxBJw9itbk7"
     }
     q3params = {
         "latitude": lat,
@@ -55,17 +50,12 @@ def create_year(year, county, state, nass, long, lat):
         "start_date": f"{year}-07-01",
         "end_date": f"{year}-09-30",
         "daily": ["temperature_2m_mean", "precipitation_sum", "sunshine_duration"],
+        "apikey": "KNxY5bxBJw9itbk7"
     }
-    q4params = {
-        "latitude": lat,
-        "longitude": long,
-        "start_date": f"{year}-10-01",
-        "end_date": f"{year}-12-31",
-        "daily": ["temperature_2m_mean", "precipitation_sum", "sunshine_duration"],
-    }
-    val = nass.get_data(call) # yield value in BU/ACRE
+
+    val = -1 # yield value in BU/ACRE
     row = [year, val]
-    params = [q1params, q2params, q3params, q4params]
+    params = [q2params, q3params]
     for param in params:
         daily = openmeteo.weather_api(url, params=param)[0].Daily()
         daily_data = {"date": pd.date_range(
@@ -87,7 +77,7 @@ def create_year(year, county, state, nass, long, lat):
                 row.append(z)
     return row
 
-cat1 = ["q1","q2","q3","q4"]
+cat1 = ["q2","q3"]
 cat2 = ["temperature", "rainSum", "SSdur"]
 cat3 = ["mean","std","min","max"]
 emp = ["year", "yield"]
@@ -109,7 +99,7 @@ def csv_create(county, state, lat, long, y1, y2, emp):
 
 
 df = pd.read_csv("states.csv")
-for i in range(22, len(df)):
+for i in range(83, len(df)):
     initial = time.time()
-    csv_create(df.loc[i]["county"], df.loc[i]["state"], df.loc[i]["lat"], df.loc[i]["long"], 1970, 2022, emp)
+    csv_create(df.loc[i]["county"], df.loc[i]["state"], df.loc[i]["lat"], df.loc[i]["long"], 2000, 2022, emp)
     print(time.time()-initial)
